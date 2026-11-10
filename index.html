@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#090909"><title>Maurya Hotel | Order at Your Table</title>
+<style>
+:root{--gold:#f5bd36;--gold2:#ffdc70;--bg:#090909;--panel:#171717;--muted:#aaa}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#fff;font:16px system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{position:sticky;top:0;z-index:5;background:#090909ed;border-bottom:1px solid #3b2c0a;backdrop-filter:blur(10px);padding:12px 4%;display:flex;align-items:center;justify-content:space-between}
+.brand{font-weight:900;color:var(--gold);font-size:1.2rem;letter-spacing:1px}.brand small{display:block;color:#eee;font-size:.65rem;letter-spacing:3px}
+button,.btn{border:0;border-radius:12px;padding:12px 16px;background:var(--gold);color:#111;font-weight:800;cursor:pointer;text-decoration:none;display:inline-block}
+button:disabled{opacity:.45}.outline{background:transparent;border:1px solid var(--gold);color:var(--gold)}
+.hero{padding:20px 4% 12px}.hero img{width:100%;display:block;max-height:650px;object-fit:contain;border:1px solid #8d6417;border-radius:14px;background:#000}
+.hero p{text-align:center;color:var(--gold2);margin:10px 0}
+.tabs{display:flex;gap:8px;overflow:auto;padding:12px 4%;position:sticky;top:61px;background:#090909;z-index:4}.tabs button{white-space:nowrap}
+section{padding:14px 4%}.section-title{color:var(--gold);font-size:1.5rem;margin:8px 0 16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.item{background:linear-gradient(145deg,#1d1d1d,#101010);border:1px solid #33270d;border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.item h3{margin:0;font-size:1.08rem}.item .desc{color:var(--muted);font-size:.85rem;flex:1}.price{color:var(--gold);font-size:1.2rem;font-weight:900}
+.add{display:flex;justify-content:space-between;align-items:center;gap:10px}.qty{display:flex;align-items:center;gap:10px}.qty button{padding:7px 11px;border-radius:9px}
+footer{text-align:center;padding:25px;color:#aaa;border-top:1px solid #33270d}
+.cart-fab{position:fixed;right:16px;bottom:18px;z-index:8;box-shadow:0 5px 25px #000;padding:15px 20px}
+.modal{display:none;position:fixed;inset:0;background:#000b;z-index:10;overflow:auto;padding:18px}.modal.open{display:block}.sheet{max-width:600px;margin:20px auto;background:#151515;border:1px solid #6d5017;border-radius:18px;padding:20px}
+.sheet h2{color:var(--gold);margin-top:0}.close{float:right;background:#333;color:#fff}.cartline{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid #333}
+input,select{width:100%;padding:13px;margin:7px 0 12px;background:#090909;color:white;border:1px solid #555;border-radius:10px}
+label{font-size:.9rem;color:#ddd}.total{font-size:1.4rem;color:var(--gold);font-weight:900}.notice{color:#ddd;background:#242014;padding:12px;border-radius:10px;font-size:.9rem}
+.invoice{background:white;color:#111;padding:20px;border-radius:10px}.invoice h2{color:#111}.invoice button{margin-top:12px}
+@media(max-width:520px){.grid{grid-template-columns:1fr 1fr;gap:9px}.item{padding:12px}.item h3{font-size:.95rem}.add{align-items:flex-start;flex-direction:column}.hero{padding:12px 3%}}
+</style></head>
+<body>
+<header><div class="brand">MAURYA HOTEL<small>GOOD FOOD • GREAT MOOD</small></div><button class="outline" onclick="openCart()">🛒 Cart <span id="cartCount">0</span></button></header>
+<div class="hero"><img src="menu-poster.png" alt="Maurya Hotel food menu poster"><p>✨ Fresh Food • Friendly Service • Always at Maurya Hotel ✨</p></div>
+<div class="tabs"><button onclick="jump('starters')">Food Starter</button><button onclick="jump('main')">Main Course</button><button onclick="jump('checkout')">Checkout</button></div>
+<section id="starters"><h2 class="section-title">🥘 Food Starter</h2><div class="grid" id="starterGrid"></div></section>
+<section id="main"><h2 class="section-title">🍛 Main Course</h2><div class="grid" id="mainGrid"></div></section>
+<footer>Maurya Hotel • Kalyan, Maharashtra • PIN 421201<br>Order from your table in just a few taps.</footer>
+<button class="cart-fab" onclick="openCart()">🛒 View Cart (<span id="fabCount">0</span>)</button>
+<div class="modal" id="cartModal"><div class="sheet"><button class="close" onclick="closeCart()">✕</button><h2>Your Cart</h2><div id="cartLines"></div><p class="total" id="cartTotal">Total: ₹0</p><div id="checkout">
+<h2>Place your order</h2><form id="orderForm">
+<label>Customer full name</label><input id="customer" required maxlength="80" placeholder="Enter your name">
+<label>Table number</label><input id="table" required maxlength="20" placeholder="e.g. 4">
+<label>Payment method</label><select id="payment"><option value="Cash">Cash at counter/table</option><option value="UPI">UPI (Paytm / PhonePe / Google Pay)</option><option value="Card">Card</option></select>
+<label>Special instructions (optional)</label><input id="notes" maxlength="250" placeholder="Less spicy, etc.">
+<div class="notice">UPI ID: <b>7039102251@kotakbank</b><br>Paytm UPI: <b>7039102251@ptyes</b><br>Choose UPI to open a payment app after order confirmation. Payment confirmation is handled by the hotel.</div>
+<button type="submit" style="width:100%;margin-top:12px">✓ Confirm Order</button></form></div></div></div>
+<div class="modal" id="successModal"><div class="sheet" id="successContent"></div></div>
+<script>
+const menu=[
+{id:"s1",cat:"starter",name:"Paneer Chilli",price:180,desc:"Spicy Indo-Chinese paneer"},
+{id:"s2",cat:"starter",name:"Paneer Pakoda",price:149,desc:"Crispy paneer fritters"},
+{id:"s3",cat:"starter",name:"Aloo Chup",price:100,desc:"Golden potato snack"},
+{id:"m1",cat:"main",name:"Paneer Masala",price:200,desc:"Paneer in rich masala gravy"},
+{id:"m2",cat:"main",name:"Butter Paneer Masala",price:300,desc:"Creamy buttery paneer curry"},
+{id:"m3",cat:"main",name:"Kahai Paneer B.",price:599,desc:"Hotel menu spelling retained; please confirm item name"},
+{id:"m4",cat:"main",name:"Matter Paneer",price:600,desc:"Paneer and peas curry"}
+];
+let cart={};
+function money(n){return "₹"+n.toFixed(2)}
+function render(){
+ for(const cat of ["starter","main"]){document.getElementById(cat+"Grid").innerHTML=menu.filter(x=>x.cat===cat).map(x=>`<article class="item"><h3>${x.name}</h3><div class="desc">${x.desc}</div><div class="add"><span class="price">${money(x.price)}</span><div class="qty">${cart[x.id]?`<button onclick="change('${x.id}',-1)">−</button><b>${cart[x.id]}</b><button onclick="change('${x.id}',1)">+</button>`:`<button onclick="change('${x.id}',1)">＋ Add</button>`}</div></div></article>`).join("")}
+ let count=Object.values(cart).reduce((a,b)=>a+b,0);document.getElementById("cartCount").textContent=count;document.getElementById("fabCount").textContent=count;
+}
+function change(id,d){cart[id]=(cart[id]||0)+d;if(cart[id]<=0)delete cart[id];render()}
+function total(){return menu.reduce((s,x)=>s+x.price*(cart[x.id]||0),0)}
+function openCart(){document.getElementById("cartModal").classList.add("open");showCart()}
+function closeCart(){document.getElementById("cartModal").classList.remove("open")}
+function showCart(){let lines=menu.filter(x=>cart[x.id]).map(x=>`<div class="cartline"><span>${x.name} × ${cart[x.id]}</span><b>${money(x.price*cart[x.id])}</b></div>`).join("");document.getElementById("cartLines").innerHTML=lines||'<p>Your cart is empty. Add delicious items first!</p>';document.getElementById("cartTotal").textContent="Total: "+money(total())}
+function jump(id){document.getElementById(id).scrollIntoView({behavior:"smooth"})}
+document.getElementById("orderForm").addEventListener("submit",async e=>{
+ e.preventDefault();if(!Object.keys(cart).length){alert("Please add items to cart.");return}
+ const order={customer:document.getElementById("customer").value.trim(),table:document.getElementById("table").value.trim(),payment:document.getElementById("payment").value,notes:document.getElementById("notes").value,items:menu.filter(x=>cart[x.id]).map(x=>({name:x.name,qty:cart[x.id],price:x.price})),total:total(),status:"Order received",createdAt:new Date().toISOString()};
+ const btn=e.submitter;btn.disabled=true;btn.textContent="Sending order…";
+ try{
+  const response=await fetch("/api/orders",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(order)});
+  if(!response.ok)throw new Error("server unavailable");
+  const result=await response.json();order.orderId=result.orderId;
+ }catch(err){
+  // Local demo fallback: keeps order in this browser; email delivery requires configured server.
+  order.orderId="LOCAL-"+Date.now();let saved=JSON.parse(localStorage.getItem("mauryaOrders")||"[]");saved.push(order);localStorage.setItem("mauryaOrders",JSON.stringify(saved));
+ }
+ cart={};render();closeCart();
+ let upi=`upi://pay?pa=7039102251%40kotakbank&pn=Maurya%20Hotel&am=${order.total.toFixed(2)}&cu=INR&tn=${encodeURIComponent("Order "+order.orderId)}`;
+ document.getElementById("successContent").innerHTML=`<div style="text-align:center"><div style="font-size:4rem;color:#52d273">✔</div><h2>Order Placed Successfully!</h2><p>Your order number: <b>${order.orderId}</b></p><p>Table: <b>${order.table}</b> • ${order.payment}</p><p class="total">${money(order.total)}</p><p>🔔 Status: <b>Order received</b></p>${order.payment==="UPI"?`<a class="btn" href="${upi}">Pay with UPI app</a><p class="notice">Please complete payment in your UPI app and show confirmation to hotel staff.</p>`:"<p>Our staff will collect payment as selected.</p>"}<p>Order updates: Preparing → Serving</p><button onclick="printInvoice(${JSON.stringify(JSON.stringify(order))})">🧾 View / Print Bill</button><button class="outline" onclick="document.getElementById('successModal').classList.remove('open')" style="margin-top:8px">Done</button></div>`;
+ document.getElementById("successModal").classList.add("open");btn.disabled=false;btn.textContent="✓ Confirm Order";
+});
+function printInvoice(encoded){const o=JSON.parse(encoded);let w=window.open("","_blank");if(!w){alert("Allow popups to view invoice.");return}w.document.write(`<html><head><title>Maurya Hotel Invoice</title><style>body{font:16px Arial;padding:25px}h1{color:#b8860b}table{width:100%;border-collapse:collapse}td,th{padding:9px;border-bottom:1px solid #ddd;text-align:left}</style></head><body><h1>MAURYA HOTEL</h1><p>Kalyan, Maharashtra • PIN 421201</p><h2>Order Invoice</h2><p>Order: ${o.orderId}<br>Customer: ${o.customer}<br>Table: ${o.table}<br>Payment: ${o.payment}<br>Date: ${new Date(o.createdAt).toLocaleString()}</p><table><tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr>${o.items.map(i=>`<tr><td>${i.name}</td><td>${i.qty}</td><td>₹${i.price}</td><td>₹${i.price*i.qty}</td></tr>`).join("")}</table><h2>Total: ₹${o.total.toFixed(2)}</h2><p>Thank you for dining with us!</p><script>window.print()<\/script></body></html>`);w.document.close()}
+render();
+</script></body></html>
